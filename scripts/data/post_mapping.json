@@ -1,0 +1,12 @@
+{
+  "mappings": {
+    "_default_": {
+      "properties": {
+        "from": {
+          "type": "string",
+          "index": "not_analyzed"
+        }
+      }
+    }
+  }
+}
