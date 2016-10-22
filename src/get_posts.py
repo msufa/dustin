@@ -5,12 +5,20 @@ import elasticsearch
 import requests
 import itertools
 
+POST_FIELDS = 'id,created_time,from,message,permalink_url,full_picture,reactions,comments,shares'
+
 def fb_to_es(fb):
 	es = {}
 	es['created_time'] = fb['created_time']
 	es['message'] = fb.get('message')
 	es['from'] = fb['from']['name']
+	es['permalink_url'] = fb['permalink_url']
+	es['full_picture'] = fb.get('full_picture')
+	es['shares'] = get_shares_count(fb)
 	return fb['id'], es
+
+def get_shares_count(post):
+	return post['shares']['count'] if 'shares' in post else 0
 
 def process_data(data):
 	print 'processing batch of {0} posts'.format(len(data))
@@ -34,7 +42,7 @@ def pages(feed):
 
 graph = facebook.GraphAPI(access_token=os.environ['FB_TOKEN'], version='2.7')
 es = elasticsearch.Elasticsearch(os.environ['ES_HOST'])
-feed = graph.request(os.environ['FB_GROUP'] + '/feed', {'fields': 'id,created_time,from,message'})
+feed = graph.request(os.environ['FB_GROUP'] + '/feed', {'fields': POST_FIELDS})
 
 # chain the initial feed and the following pages so that we can treat them as
 # a single sequence and don't need to duplicate the logging and processing calls

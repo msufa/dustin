@@ -1,8 +1,16 @@
 {
   "mappings": {
-    "_default_": {
+    "post": {
       "properties": {
         "from": {
+          "type": "string",
+          "index": "not_analyzed"
+        },
+        "permalink_url": {
+          "type": "string",
+          "index": "not_analyzed"
+        },
+        "full_picture": {
           "type": "string",
           "index": "not_analyzed"
         }
