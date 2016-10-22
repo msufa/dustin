@@ -5,7 +5,7 @@ import elasticsearch
 import requests
 import itertools
 
-POST_FIELDS = 'id,created_time,from,message,permalink_url,full_picture,reactions,comments,shares'
+POST_FIELDS = 'id,created_time,from,message,permalink_url,full_picture,reactions{type},comments{id},shares'
 
 def fb_to_es(fb):
 	es = {}
@@ -15,10 +15,18 @@ def fb_to_es(fb):
 	es['permalink_url'] = fb['permalink_url']
 	es['full_picture'] = fb.get('full_picture')
 	es['shares'] = get_shares_count(fb)
+	es['comments'] = get_comments_count(fb)
 	return fb['id'], es
 
 def get_shares_count(post):
 	return post['shares']['count'] if 'shares' in post else 0
+
+def get_comments_count(post):
+	count = 0
+	if 'comments' in post:
+		for comments in itertools.chain([post['comments']], pages(post['comments'])):
+			count += len(comments['data'])
+	return count
 
 def process_data(data):
 	print 'processing batch of {0} posts'.format(len(data))
@@ -26,18 +34,18 @@ def process_data(data):
 		id, doc = fb_to_es(post)
 		es.index('hbc', 'post', json.dumps(doc), id)
 
-def get_next_page(feed):
-	next = feed['paging']['next']
-	print 'next feed URL: {0}'.format(next)
+def get_next_page(obj):
+	next = obj['paging']['next']
+	print 'next object URL: {0}'.format(next)
 	return requests.get(next).json()
 
-def has_more_data(feed):
-	return ('paging' in feed) and ('next' in feed['paging'])
+def has_more_data(obj):
+	return ('paging' in obj) and ('next' in obj['paging'])
 
-def pages(feed):
-	while has_more_data(feed):
-		feed = get_next_page(feed)
-		yield feed
+def pages(obj):
+	while has_more_data(obj):
+		obj = get_next_page(obj)
+		yield obj
 
 
 graph = facebook.GraphAPI(access_token=os.environ['FB_TOKEN'], version='2.7')
