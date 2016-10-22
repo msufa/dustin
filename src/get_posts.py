@@ -17,6 +17,7 @@ def fb_post_to_es_doc(post):
 	doc['shares'] = get_shares_count(post)
 	doc['comments'] = get_object_count(post, 'comments')
 	doc['reactions'] = get_object_count(post, 'reactions')
+	doc['interactions'] = doc['shares'] + doc['comments'] + doc['reactions']
 	return post['id'], doc
 
 def get_shares_count(post):
