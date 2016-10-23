@@ -14,10 +14,12 @@ def fb_post_to_es_doc(post):
 	doc['from'] = post['from']['name']
 	doc['permalink_url'] = post['permalink_url']
 	doc['full_picture'] = post.get('full_picture')
-	doc['shares'] = get_shares_count(post)
-	doc['comments'] = get_object_count(post, 'comments')
-	doc['reactions'] = get_object_count(post, 'reactions')
-	doc['interactions'] = doc['shares'] + doc['comments'] + doc['reactions']
+	doc['interactions'] = {
+		'shares': get_shares_count(post),
+		'comments': get_object_count(post, 'comments'),
+		'reactions': get_object_count(post, 'reactions')
+	}
+	doc['interactions']['total'] = sum(doc['interactions'].values())
 	doc['location'] = get_location(post)
 	return post['id'], doc
 
