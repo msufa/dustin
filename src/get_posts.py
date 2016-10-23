@@ -8,19 +8,18 @@ import itertools
 POST_FIELDS = 'id,created_time,from,message,permalink_url,full_picture,reactions{id},comments{id},shares,place'
 
 def fb_post_to_es_doc(post):
-	doc = {}
-	doc['created_time'] = post['created_time']
-	doc['message'] = post.get('message')
-	doc['from'] = post['from']['name']
-	doc['permalink_url'] = post['permalink_url']
-	doc['full_picture'] = post.get('full_picture')
-	doc['interactions'] = {
+	doc = {
+		'created_time': post['created_time'],
+		'message': post.get('message'),
+		'from': post['from']['name'],
+		'permalink_url': post['permalink_url'],
+		'full_picture': post.get('full_picture'),
 		'shares': get_shares_count(post),
 		'comments': get_object_count(post, 'comments'),
 		'reactions': get_object_count(post, 'reactions')
 	}
-	doc['interactions']['total'] = sum(doc['interactions'].values())
-	doc['place'] = get_place(post)
+	doc['total_interactions'] = doc['shares'] + doc['comments'] + doc['reactions']
+	doc.update(get_place(post))
 	return post['id'], doc
 
 def get_shares_count(post):
@@ -34,20 +33,19 @@ def get_object_count(post, object_name):
 	return count
 
 def get_place(post):
+	place_info = {}
 	place = post.get('place')
 	if place:
-		place_info = {}
-		place_info['name'] = place['name']
-		location = place['location']
+		place_info['place_name'] = place.get('name')
+		location = place.get('location')
 		if location:
-			place_info['city'] = location['city']
-			place_info['country'] = location['country']
+			place_info['city'] = location.get('city')
+			place_info['country'] = location.get('country')
 			place_info['coordinates'] = {
-				'lat': location['latitude'],
-				'lon': location['longitude']
+				'lat': location.get('latitude'),
+				'lon': location.get('longitude')
 			}
-		return place_info
-	return None
+	return place_info
 
 def process_data(data, es):
 	print 'processing batch of {0} posts'.format(len(data))
