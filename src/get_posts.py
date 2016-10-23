@@ -20,7 +20,7 @@ def fb_post_to_es_doc(post):
 		'reactions': get_object_count(post, 'reactions')
 	}
 	doc['interactions']['total'] = sum(doc['interactions'].values())
-	doc['location'] = get_location(post)
+	doc['place'] = get_place(post)
 	return post['id'], doc
 
 def get_shares_count(post):
@@ -33,12 +33,20 @@ def get_object_count(post, object_name):
 			count += len(obj['data'])
 	return count
 
-def get_location(post):
-	if 'place' in post and 'location' in post['place']:
-		return {
-			'lat': post['place']['location']['latitude'],
-			'lon': post['place']['location']['longitude']
-		}
+def get_place(post):
+	place = post.get('place')
+	if place:
+		place_info = {}
+		place_info['name'] = place['name']
+		location = place['location']
+		if location:
+			place_info['city'] = location['city']
+			place_info['country'] = location['country']
+			place_info['coordinates'] = {
+				'lat': location['latitude'],
+				'lon': location['longitude']
+			}
+		return place_info
 	return None
 
 def process_data(data, es):
