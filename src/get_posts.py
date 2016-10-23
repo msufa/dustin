@@ -5,7 +5,7 @@ import elasticsearch
 import requests
 import itertools
 
-POST_FIELDS = 'id,created_time,from,message,permalink_url,full_picture,reactions{id},comments{id},shares'
+POST_FIELDS = 'id,created_time,from,message,permalink_url,full_picture,reactions{id},comments{id},shares,place'
 
 def fb_post_to_es_doc(post):
 	doc = {}
@@ -18,6 +18,7 @@ def fb_post_to_es_doc(post):
 	doc['comments'] = get_object_count(post, 'comments')
 	doc['reactions'] = get_object_count(post, 'reactions')
 	doc['interactions'] = doc['shares'] + doc['comments'] + doc['reactions']
+	doc['location'] = get_location(post)
 	return post['id'], doc
 
 def get_shares_count(post):
@@ -29,6 +30,14 @@ def get_object_count(post, object_name):
 		for obj in itertools.chain([post[object_name]], pages(post[object_name])):
 			count += len(obj['data'])
 	return count
+
+def get_location(post):
+	if 'place' in post and 'location' in post['place']:
+		return {
+			'lat': post['place']['location']['latitude'],
+			'lon': post['place']['location']['longitude']
+		}
+	return None
 
 def process_data(data, es):
 	print 'processing batch of {0} posts'.format(len(data))
