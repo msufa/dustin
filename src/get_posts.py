@@ -68,7 +68,9 @@ def pages(obj):
 
 
 graph_api = facebook.GraphAPI(access_token=os.environ['FB_TOKEN'], version='2.7')
-es_api = elasticsearch.Elasticsearch(os.environ['ES_HOST'])
+es_uri = 'http://{0}:{1}@{2}:9200/'.format(os.environ['ES_USER'], os.environ['ES_SECRET'], os.environ['ES_HOST'])
+print es_uri
+es_api = elasticsearch.Elasticsearch(es_uri)
 feed = graph_api.request(os.environ['FB_GROUP'] + '/feed', {'fields': POST_FIELDS})
 
 # chain the initial feed and the following pages so that we can treat them as
