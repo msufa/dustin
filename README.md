@@ -3,6 +3,8 @@
 Ultimately, a web service consuming hooks for group posts
 from Facebook and forwarding them to an ElasticSearch index.
 
+[![Build Status](https://travis-ci.org/msufa/dustin.svg?branch=master)](https://travis-ci.org/msufa/dustin)
+
 ## Requirements
 
 You need to set some environment variables:
