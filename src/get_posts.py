@@ -5,22 +5,23 @@ import requests
 import facebook
 import elasticsearch
 
-POST_FIELDS = 'id,created_time,from,message,permalink_url,full_picture,place,' \
-              'reactions{id},comments{id},shares'
+POST_DETAILS_FIELDS = 'created_time,from,permalink_url,full_picture,place,' \
+    'reactions{id},comments{id},shares'
 
-def fb_post_to_es_doc(post):
+def fb_post_to_es_doc(post, graph_api):
+    details = graph_api.get_object(id=post['id'], fields=POST_DETAILS_FIELDS)
     doc = {
-        'created_time': post['created_time'],
         'message': post.get('message'),
-        'from': post['from']['name'],
-        'permalink_url': post['permalink_url'],
-        'full_picture': post.get('full_picture'),
-        'shares': get_shares_count(post),
-        'comments': get_object_count(post, 'comments'),
-        'reactions': get_object_count(post, 'reactions')
+        'created_time': details['created_time'],
+        'from': details['from']['name'],
+        'permalink_url': details['permalink_url'],
+        'full_picture': details.get('full_picture'),
+        'shares': get_shares_count(details),
+        'comments': get_object_count(details, 'comments'),
+        'reactions': get_object_count(details, 'reactions')
     }
     doc['total_interactions'] = doc['shares'] + doc['comments'] + doc['reactions']
-    doc.update(get_place(post))
+    doc.update(get_place(details))
     return post['id'], doc
 
 def get_shares_count(post):
@@ -48,10 +49,10 @@ def get_place(post):
             }
     return place_info
 
-def process_data(data, es_api):
+def process_data(data, graph_api, es_api):
     print 'processing batch of {0} posts'.format(len(data))
     for post in data:
-        post_id, doc = fb_post_to_es_doc(post)
+        post_id, doc = fb_post_to_es_doc(post, graph_api)
         es_api.index('hbc', 'post', json.dumps(doc), post_id)
 
 def get_next_page(obj):
@@ -70,11 +71,12 @@ def pages(obj):
 
 GRAPH_API = facebook.GraphAPI(access_token=os.environ['FB_TOKEN'], version='2.7')
 ES_API = elasticsearch.Elasticsearch(os.environ['ES_HOST'])
-INITIAL_FEED_PAGE = GRAPH_API.request(os.environ['FB_GROUP'] + '/feed', {'fields': POST_FIELDS})
+INITIAL_FEED_PAGE = GRAPH_API.get_connections(
+    id=os.environ['FB_GROUP'], connection_name='feed')
 
 # chain the initial feed and the following pages so that we can treat them as
 # a single sequence and don't need to duplicate the logging and processing calls
 for page_index, page in enumerate(
         itertools.chain([INITIAL_FEED_PAGE], pages(INITIAL_FEED_PAGE)), start=1):
     print 'processing page: {0}'.format(page_index)
-    process_data(page['data'], ES_API)
+    process_data(page['data'], GRAPH_API, ES_API)
