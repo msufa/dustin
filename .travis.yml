@@ -6,7 +6,6 @@ branches:
     - master
 install:
   - pip install -r requirements.txt
-  - pip install pylint
 script:
   - python -m py_compile ./src/*.py
   - pylint ./src/*.py --disable=missing-docstring
