@@ -9,5 +9,5 @@ mccabe==0.5.2
 pylint==1.6.4
 requests==2.20.0
 six==1.10.0
-urllib3==1.24.2
+urllib3==1.26.5
 wrapt==1.10.8
