@@ -13,4 +13,4 @@ You need to set some environment variables which the script expects to be able t
 * FB_GROUP - the Facebook Group you wish to index
 * ES_HOST - the ElasticSearch target host
 
-Trigger CI.
+Trigger CI again.
